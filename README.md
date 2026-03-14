@@ -1,4 +1,4 @@
-# AI Knowledge OS
+# ClinSight-AI
 
 > Stage 1 MVP — AI-powered document Q&A with JWT auth, PDF processing, vector search, and Gemini.
 
