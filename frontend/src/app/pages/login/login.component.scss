@@ -1,0 +1,202 @@
+// ─── Auth Shared SCSS ─────────────────────────────────────────────────────────
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    bottom: -100px;
+    left: -100px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.auth-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  .brand-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+
+  &:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+
+  &.error {
+    border-color: #f87171;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1);
+  }
+
+  .input-icon {
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    user-select: none;
+  }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0.75rem 0.75rem 0.75rem 0;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    font-family: inherit;
+
+    &::placeholder { color: var(--text-muted); }
+  }
+
+  .toggle-pw {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    &:hover { opacity: 1; }
+  }
+}
+
+.error-msg {
+  font-size: 0.78rem;
+  color: #f87171;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.auth-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+
+  a {
+    color: var(--accent-light);
+    text-decoration: none;
+    font-weight: 500;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}

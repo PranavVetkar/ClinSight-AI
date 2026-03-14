@@ -1,0 +1,54 @@
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-icon">🧠</div>
+      <h1>AI Knowledge OS</h1>
+      <p class="subtitle">Sign in to your knowledge base</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="field-group">
+        <label>Email</label>
+        <div class="input-wrap" [class.error]="form.get('email')?.invalid && form.get('email')?.touched">
+          <span class="input-icon">📧</span>
+          <input
+            id="login-email"
+            type="email"
+            formControlName="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+          />
+        </div>
+        <span class="error-msg" *ngIf="form.get('email')?.touched && form.get('email')?.hasError('required')">Email is required</span>
+        <span class="error-msg" *ngIf="form.get('email')?.touched && form.get('email')?.hasError('email')">Enter a valid email</span>
+      </div>
+
+      <div class="field-group">
+        <label>Password</label>
+        <div class="input-wrap" [class.error]="form.get('password')?.invalid && form.get('password')?.touched">
+          <span class="input-icon">🔒</span>
+          <input
+            id="login-password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+          <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <span class="error-msg" *ngIf="form.get('password')?.touched && form.get('password')?.hasError('required')">Password is required</span>
+      </div>
+
+      <button id="login-submit" type="submit" class="btn-primary" [disabled]="loading">
+        <mat-spinner *ngIf="loading" diameter="20" strokeWidth="2"></mat-spinner>
+        <span *ngIf="!loading">Sign In</span>
+      </button>
+    </form>
+
+    <p class="auth-link">
+      Don't have an account? <a routerLink="/register">Create one</a>
+    </p>
+  </div>
+</div>

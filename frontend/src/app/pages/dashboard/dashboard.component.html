@@ -1,0 +1,89 @@
+<div class="dashboard-wrapper">
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">🧠</span>
+            <span class="brand-name">AI Knowledge OS</span>
+        </div>
+        <div class="nav-right">
+            <span class="user-email">{{ userEmail }}</span>
+            <button id="logout-btn" class="btn-ghost" (click)="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="header-left">
+                <h1>My Knowledge Base</h1>
+                <p class="header-subtitle">Upload PDFs and ask AI-powered questions</p>
+            </div>
+            <label id="upload-btn" class="btn-primary upload-btn" [class.uploading]="uploading">
+                <ng-container *ngIf="!uploading">
+                    <span>+ Upload PDF</span>
+                </ng-container>
+                <ng-container *ngIf="uploading">
+                    <mat-spinner diameter="18" strokeWidth="2"></mat-spinner>
+                    <span>Uploading...</span>
+                </ng-container>
+                <input type="file" accept=".pdf" (change)="onFileSelected($event)" [disabled]="uploading" hidden />
+            </label>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" *ngIf="!loading && documents.length > 0">
+            <div class="stat">
+                <span class="stat-value">{{ documents.length }}</span>
+                <span class="stat-label">Documents</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">{{ totalPages }}</span>
+                <span class="stat-label">Total Pages</span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="loading">
+            <mat-spinner diameter="40" strokeWidth="3"></mat-spinner>
+            <p>Loading your documents...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!loading && documents.length === 0">
+            <div class="empty-icon">📄</div>
+            <h2>No documents yet</h2>
+            <p>Upload your first PDF to get started. Ask AI anything about your documents.</p>
+            <label class="btn-primary">
+                <span>+ Upload Your First PDF</span>
+                <input type="file" accept=".pdf" (change)="onFileSelected($event)" hidden />
+            </label>
+        </div>
+
+        <!-- Documents Grid -->
+        <div class="docs-grid" *ngIf="!loading && documents.length > 0">
+            <div class="doc-card" *ngFor="let doc of documents" (click)="openDocument(doc.doc_id)"
+                [id]="'doc-card-' + doc.doc_id">
+                <div class="doc-icon">📕</div>
+                <div class="doc-info">
+                    <h3 class="doc-title">{{ doc.filename }}</h3>
+                    <div class="doc-meta">
+                        <span class="meta-tag">{{ doc.page_count }} pages</span>
+                        <span class="meta-tag">{{ doc.chunk_count }} chunks</span>
+                        <span class="meta-tag">{{ formatSize(doc.size_bytes) }}</span>
+                    </div>
+                    <p class="doc-date">Uploaded {{ formatDate(doc.uploaded_at) }}</p>
+                </div>
+                <div class="doc-actions">
+                    <button class="btn-ask" (click)="openDocument(doc.doc_id)" [id]="'ask-btn-' + doc.doc_id">Ask AI
+                        ✨</button>
+                    <button class="btn-delete" (click)="deleteDocument($event, doc.doc_id)"
+                        [id]="'delete-btn-' + doc.doc_id" [disabled]="deletingId === doc.doc_id">
+                        <mat-spinner *ngIf="deletingId === doc.doc_id" diameter="14" strokeWidth="2"></mat-spinner>
+                        <span *ngIf="deletingId !== doc.doc_id">🗑️</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

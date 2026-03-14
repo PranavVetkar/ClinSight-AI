@@ -1,0 +1,66 @@
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="brand">
+            <div class="brand-icon">🧠</div>
+            <h1>AI Knowledge OS</h1>
+            <p class="subtitle">Create your knowledge base account</p>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+            <div class="field-group">
+                <label>Full Name</label>
+                <div class="input-wrap" [class.error]="form.get('name')?.invalid && form.get('name')?.touched">
+                    <span class="input-icon">👤</span>
+                    <input id="reg-name" type="text" formControlName="name" placeholder="Your name"
+                        autocomplete="name" />
+                </div>
+                <span class="error-msg" *ngIf="form.get('name')?.touched && form.get('name')?.hasError('required')">Name
+                    is required</span>
+                <span class="error-msg"
+                    *ngIf="form.get('name')?.touched && form.get('name')?.hasError('minlength')">Name must be at least 2
+                    characters</span>
+            </div>
+
+            <div class="field-group">
+                <label>Email</label>
+                <div class="input-wrap" [class.error]="form.get('email')?.invalid && form.get('email')?.touched">
+                    <span class="input-icon">📧</span>
+                    <input id="reg-email" type="email" formControlName="email" placeholder="you@example.com"
+                        autocomplete="email" />
+                </div>
+                <span class="error-msg"
+                    *ngIf="form.get('email')?.touched && form.get('email')?.hasError('required')">Email is
+                    required</span>
+                <span class="error-msg" *ngIf="form.get('email')?.touched && form.get('email')?.hasError('email')">Enter
+                    a valid email</span>
+            </div>
+
+            <div class="field-group">
+                <label>Password</label>
+                <div class="input-wrap" [class.error]="form.get('password')?.invalid && form.get('password')?.touched">
+                    <span class="input-icon">🔒</span>
+                    <input id="reg-password" [type]="showPassword ? 'text' : 'password'" formControlName="password"
+                        placeholder="Min. 6 characters" autocomplete="new-password" />
+                    <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
+                        {{ showPassword ? '🙈' : '👁️' }}
+                    </button>
+                </div>
+                <span class="error-msg"
+                    *ngIf="form.get('password')?.touched && form.get('password')?.hasError('required')">Password is
+                    required</span>
+                <span class="error-msg"
+                    *ngIf="form.get('password')?.touched && form.get('password')?.hasError('minlength')">Password must
+                    be at least 6 characters</span>
+            </div>
+
+            <button id="reg-submit" type="submit" class="btn-primary" [disabled]="loading">
+                <mat-spinner *ngIf="loading" diameter="20" strokeWidth="2"></mat-spinner>
+                <span *ngIf="!loading">Create Account</span>
+            </button>
+        </form>
+
+        <p class="auth-link">
+            Already have an account? <a routerLink="/login">Sign in</a>
+        </p>
+    </div>
+</div>
