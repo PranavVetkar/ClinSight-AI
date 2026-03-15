@@ -1,30 +1,38 @@
 # ClinSight-AI
 
-> Stage 1 MVP — AI-powered document Q&A with JWT auth, PDF processing, vector search, and Gemini.
+> Modern AI-powered Clinical Document Q&A System — PDF processing, local vector search, and Gemini-driven insights.
 
 ```
 Angular ──► FastAPI ──► PyMuPDF ──► sentence-transformers ──► ChromaDB ──► Gemini
 ```
 
+## Overview
+ClinSight-AI is a full-stack application designed for clinical document analysis. It allows users to upload PDF records, which are then processed, chunked, and embedded locally. The system utilizes RAG (Retrieval-Augmented Generation) with Google's Gemini to provide accurate answers based on the uploaded clinical data, all within a secure, authenticated environment using local SQLite and JWT.
+
 ## Quick Start
 
 ### 1. Backend
+The backend uses FastAPI and a local SQLite database for user management and document metadata.
+
 ```bash
 cd backend
+python -m venv .venv
+source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
-cp .env.example .env   # fill in your credentials
+cp .env.example .env       # Add your GEMINI_API_KEY
+python seed_users.py       # Create demo accounts
 uvicorn main:app --reload --port 8000
 ```
-
 API docs: http://localhost:8000/docs
 
 ### 2. Frontend
+The frontend is built with Angular and provides a premium, responsive dashboard for document management.
+
 ```bash
 cd frontend
 npm install
 ng serve
 ```
-
 App: http://localhost:4200
 
 ---
@@ -32,48 +40,45 @@ App: http://localhost:4200
 ## Project Structure
 
 ```
-AI-Knowledge-OS/
+ClinSight-AI/
 ├── backend/
 │   ├── main.py             # FastAPI entry point
-│   ├── config.py           # Env var settings
+│   ├── config.py           # Settings & Env handling
+│   ├── seed_users.py       # Demo data script
 │   ├── requirements.txt
-│   ├── .env                # Your credentials (fill in!)
-│   ├── .env.example        # Credential template
-│   ├── auth/               # JWT auth (register, login)
-│   ├── documents/          # PDF upload, extraction, embeddings
-│   ├── qa/                 # Gemini Q&A
-│   └── db/                 # Firestore client
+│   ├── .env                # Credentials & Config
+│   ├── auth/               # JWT & Password hashing
+│   ├── db/                 # Local SQLite (app.db) access
+│   ├── documents/          # PDF processing & Embeddings
+│   └── qa/                 # Gemini RAG integration
 │
 └── frontend/
     └── src/app/
-        ├── pages/          # login, register, dashboard, document-detail
-        ├── services/       # auth, document, qa services
-        ├── guards/         # authGuard
-        └── interceptors/   # JWT interceptor
+        ├── pages/          # Login, Register, Dashboard, Detail
+        ├── services/       # Auth, Document, QA API clients
+        ├── guards/         # Route protection
+        └── interceptors/   # Auth headers
 ```
 
 ## Required Credentials
 
-| Key | Where to get |
-|-----|-------------|
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) |
-| `FIREBASE_SERVICE_ACCOUNT_PATH` | Firebase Console → Project Settings → Service Accounts |
-| `JWT_SECRET_KEY` | Run: `openssl rand -hex 32` |
-
-### Firestore Setup
-In Firebase Console, create a database with these collections:
-- `users` — user accounts
-- `documents` — PDF metadata  
-- `queries` — Q&A history
+| Key | Description | Where to get |
+|-----|-------------|--------------|
+| `GEMINI_API_KEY` | Power the RAG Q&A | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `JWT_SECRET_KEY` | Sign auth tokens | `openssl rand -hex 32` (or use default dev secret) |
 
 ## API Reference
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/health` | ❌ | Health check |
-| POST | `/auth/register` | ❌ | Register user |
-| POST | `/auth/login` | ❌ | Login, get JWT |
-| POST | `/documents/upload` | ✅ | Upload PDF |
-| GET | `/documents/` | ✅ | List documents |
-| DELETE | `/documents/{id}` | ✅ | Delete document |
-| POST | `/qa/ask` | ✅ | Ask a question |
+| POST | `/auth/register` | ❌ | Register a new user |
+| POST | `/auth/login` | ❌ | Get JWT access token |
+| POST | `/documents/upload` | ✅ | Upload & process PDF |
+| GET | `/documents/` | ✅ | List user documents |
+| DELETE | `/documents/{id}` | ✅ | Remove document & vectors |
+| POST | `/qa/ask` | ✅ | Contextual Q&A via Gemini |
+
+## Development
+- **Database**: Local SQLite is stored in `backend/local_data/app.db`.
+- **Vector Store**: ChromaDB persists in `backend/chroma_db/`.
+- **Embeddings**: `sentence-transformers` runs locally for privacy and cost-efficiency.
