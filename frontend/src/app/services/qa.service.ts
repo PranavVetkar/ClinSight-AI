@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 export interface AskResponse {
     answer: string;
     sources: string[];
-    doc_id: string;
+    patient_id: string;
     question: string;
 }
 
@@ -16,10 +16,10 @@ export class QaService {
 
     constructor(private http: HttpClient) { }
 
-    askQuestion(docId: string, question: string): Observable<AskResponse> {
+    askQuestion(patientId: string, question: string): Observable<AskResponse> {
         return this.http.post<AskResponse>(`${this.apiUrl}/ask`, {
-            doc_id: docId,
-            question,
+            patient_id: patientId,
+            question: question,
         });
     }
 }

@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 export interface Document {
     doc_id: string;
     user_id: string;
+    patient_id: string;
     filename: string;
     page_count: number;
     chunk_count: number;
@@ -19,14 +20,14 @@ export class DocumentService {
 
     constructor(private http: HttpClient) { }
 
-    uploadDocument(file: File): Observable<Document> {
+    uploadDocument(patientId: string, file: File): Observable<Document> {
         const formData = new FormData();
         formData.append('file', file);
-        return this.http.post<Document>(`${this.apiUrl}/upload`, formData);
+        return this.http.post<Document>(`${this.apiUrl}/upload?patient_id=${patientId}`, formData);
     }
 
-    listDocuments(): Observable<{ documents: Document[] }> {
-        return this.http.get<{ documents: Document[] }>(`${this.apiUrl}/`);
+    listDocuments(patientId: string): Observable<{ documents: Document[] }> {
+        return this.http.get<{ documents: Document[] }>(`${this.apiUrl}/?patient_id=${patientId}`);
     }
 
     deleteDocument(docId: string): Observable<void> {

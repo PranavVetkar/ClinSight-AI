@@ -1,7 +1,7 @@
 """
 Local SQLite database replacing Firebase/Firestore.
 Data is stored in backend/local_data/app.db
-Three tables: users, documents, queries — each storing rows as JSON blobs.
+Three tables: users, patients, documents, queries — each storing rows as JSON blobs.
 """
 import json
 import sqlite3
@@ -29,20 +29,28 @@ def init_db() -> None:
                 data    TEXT NOT NULL
             );
 
-            CREATE TABLE IF NOT EXISTS documents (
-                doc_id  TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                data    TEXT NOT NULL
+            CREATE TABLE IF NOT EXISTS patients (
+                patient_id TEXT PRIMARY KEY,
+                user_id    TEXT NOT NULL,
+                data       TEXT NOT NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_patients_user_id ON patients(user_id);
 
-            CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
+            CREATE TABLE IF NOT EXISTS documents (
+                doc_id     TEXT PRIMARY KEY,
+                user_id    TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                data       TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_documents_patient_id ON documents(patient_id);
 
             CREATE TABLE IF NOT EXISTS queries (
-                id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                doc_id  TEXT NOT NULL,
-                data    TEXT NOT NULL
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                data       TEXT NOT NULL
             );
+            CREATE INDEX IF NOT EXISTS idx_queries_patient_id ON queries(patient_id);
         """)
 
 
@@ -50,9 +58,7 @@ def init_db() -> None:
 
 def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     with _get_conn() as conn:
-        row = conn.execute(
-            "SELECT data FROM users WHERE email = ?", (email,)
-        ).fetchone()
+        row = conn.execute("SELECT data FROM users WHERE email = ?", (email,)).fetchone()
     return json.loads(row["data"]) if row else None
 
 
@@ -64,29 +70,59 @@ def create_user(user: Dict[str, Any]) -> None:
         )
 
 
+# ── Patients ──────────────────────────────────────────────────────────────────
+
+def create_patient(patient: Dict[str, Any]) -> None:
+    with _get_conn() as conn:
+        conn.execute(
+            "INSERT INTO patients (patient_id, user_id, data) VALUES (?, ?, ?)",
+            (patient["patient_id"], patient["user_id"], json.dumps(patient)),
+        )
+
+
+def get_patient(patient_id: str) -> Optional[Dict[str, Any]]:
+    with _get_conn() as conn:
+        row = conn.execute("SELECT data FROM patients WHERE patient_id = ?", (patient_id,)).fetchone()
+    return json.loads(row["data"]) if row else None
+
+
+def list_user_patients(user_id: str) -> List[Dict[str, Any]]:
+    with _get_conn() as conn:
+        rows = conn.execute(
+            "SELECT data FROM patients WHERE user_id = ? ORDER BY rowid DESC", (user_id,)
+        ).fetchall()
+    return [json.loads(r["data"]) for r in rows]
+
+
+def delete_patient(patient_id: str) -> None:
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM patients WHERE patient_id = ?", (patient_id,))
+        # Cascading deletes
+        conn.execute("DELETE FROM documents WHERE patient_id = ?", (patient_id,))
+        conn.execute("DELETE FROM queries WHERE patient_id = ?", (patient_id,))
+
+
 # ── Documents ─────────────────────────────────────────────────────────────────
 
 def create_document(doc: Dict[str, Any]) -> None:
     with _get_conn() as conn:
         conn.execute(
-            "INSERT INTO documents (doc_id, user_id, data) VALUES (?, ?, ?)",
-            (doc["doc_id"], doc["user_id"], json.dumps(doc)),
+            "INSERT INTO documents (doc_id, user_id, patient_id, data) VALUES (?, ?, ?, ?)",
+            (doc["doc_id"], doc["user_id"], doc["patient_id"], json.dumps(doc)),
         )
 
 
 def get_document(doc_id: str) -> Optional[Dict[str, Any]]:
     with _get_conn() as conn:
-        row = conn.execute(
-            "SELECT data FROM documents WHERE doc_id = ?", (doc_id,)
-        ).fetchone()
+        row = conn.execute("SELECT data FROM documents WHERE doc_id = ?", (doc_id,)).fetchone()
     return json.loads(row["data"]) if row else None
 
 
-def list_user_documents(user_id: str) -> List[Dict[str, Any]]:
+def list_patient_documents(patient_id: str) -> List[Dict[str, Any]]:
     with _get_conn() as conn:
         rows = conn.execute(
-            "SELECT data FROM documents WHERE user_id = ? ORDER BY rowid DESC",
-            (user_id,),
+            "SELECT data FROM documents WHERE patient_id = ? ORDER BY rowid DESC",
+            (patient_id,),
         ).fetchall()
     return [json.loads(r["data"]) for r in rows]
 
@@ -101,6 +137,13 @@ def delete_document(doc_id: str) -> None:
 def create_query(query: Dict[str, Any]) -> None:
     with _get_conn() as conn:
         conn.execute(
-            "INSERT INTO queries (user_id, doc_id, data) VALUES (?, ?, ?)",
-            (query["user_id"], query["doc_id"], json.dumps(query)),
+            "INSERT INTO queries (user_id, patient_id, data) VALUES (?, ?, ?)",
+            (query["user_id"], query["patient_id"], json.dumps(query)),
         )
+
+def list_patient_queries(patient_id: str) -> List[Dict[str, Any]]:
+    with _get_conn() as conn:
+        rows = conn.execute(
+            "SELECT data FROM queries WHERE patient_id = ? ORDER BY rowid DESC", (patient_id,)
+        ).fetchall()
+    return [json.loads(r["data"]) for r in rows]

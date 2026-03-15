@@ -70,6 +70,155 @@
     }
 }
 
+// ── Main Layout (Sidebar + Chat)
+.main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+// ── Sidebar
+.records-sidebar {
+    width: 300px;
+    background: rgba(255, 255, 255, 0.015);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    flex-shrink: 0;
+
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .count-badge {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+    }
+
+    .btn-upload {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        background: transparent;
+        border: 1px dashed var(--border-color);
+        color: var(--accent-light);
+        padding: 0.6rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 1.25rem;
+        transition: all 0.2s;
+
+        &:hover:not(.uploading) {
+            border-color: var(--accent-light);
+            background: rgba(0, 188, 212, 0.05);
+        }
+
+        &.uploading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            border-color: var(--border-color);
+        }
+    }
+
+    .records-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        overflow-y: auto;
+        
+        &::-webkit-scrollbar { width: 4px; }
+        &::-webkit-scrollbar-track { background: transparent; }
+        &::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+    }
+
+    .record-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        gap: 0.5rem;
+
+        .record-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            min-width: 0;
+            flex: 1;
+
+            .record-icon {
+                font-size: 1.1rem;
+                flex-shrink: 0;
+            }
+
+            .record-meta {
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+
+                h4 {
+                    margin: 0;
+                    font-size: 0.82rem;
+                    color: var(--text-primary);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                span {
+                    font-size: 0.7rem;
+                    color: var(--text-muted);
+                }
+            }
+        }
+
+        .btn-delete-record {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover:not(:disabled) {
+                color: #f87171;
+                background: rgba(248, 113, 113, 0.1);
+            }
+        }
+    }
+
+    .empty-records {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        padding: 2rem 0;
+    }
+}
+
 // ── Chat Area
 .chat-area {
     flex: 1;
@@ -120,6 +269,10 @@
         margin: 0;
     }
 
+    .warning {
+        color: #f87171;
+    }
+
     .suggestion-chips {
         display: flex;
         flex-wrap: wrap;
@@ -164,7 +317,7 @@
         flex-direction: row-reverse;
 
         .message-body {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, #009688, #00bcd4);
             border-radius: 18px 4px 18px 18px;
 
             .message-text {
@@ -172,7 +325,7 @@
             }
 
             .message-time {
-                color: rgba(255, 255, 255, 0.65);
+                color: rgba(255, 255, 255, 0.75);
             }
         }
     }
@@ -329,6 +482,7 @@
         font-family: inherit;
         line-height: 1.5;
         max-height: 120px;
+        min-height: 24px;
 
         &::placeholder {
             color: var(--text-muted);
@@ -336,7 +490,7 @@
     }
 
     .btn-send {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        background: linear-gradient(135deg, #009688, #00bcd4);
         border: none;
         border-radius: 8px;
         width: 36px;
@@ -357,6 +511,8 @@
         &:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background: var(--bg-input);
+            color: var(--text-muted);
         }
     }
 
@@ -368,44 +524,38 @@
     }
 }
 
+// ── Animations
+.fade-in {
+    animation: fadeInUp 0.3s ease-out;
+}
+
 @keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-6px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
 }
 
 @keyframes bounce {
-
-    0%,
-    60%,
-    100% {
-        transform: translateY(0);
-    }
-
-    30% {
-        transform: translateY(-6px);
-    }
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
 }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .records-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 200px;
+    }
+
     .chat-area {
         padding: 1rem;
     }
@@ -416,9 +566,5 @@
 
     .message .message-body {
         max-width: 85%;
-    }
-
-    .detail-nav {
-        padding: 0.75rem 1rem;
     }
 }

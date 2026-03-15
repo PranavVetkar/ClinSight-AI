@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from auth.models import TokenData
 from auth.utils import get_current_user
-from db.local_db import create_document, delete_document, get_document, list_user_documents
+from db.local_db import create_document, delete_document, get_document, list_patient_documents, get_patient
 from documents.embeddings import add_document_chunks, delete_document_chunks
 from documents.models import DocumentList, DocumentOut
 from documents.processor import chunk_text, extract_text_from_pdf
@@ -17,6 +17,7 @@ MAX_FILE_SIZE_MB = 20
 
 @router.post("/upload", response_model=DocumentOut, status_code=status.HTTP_201_CREATED)
 async def upload_document(
+    patient_id: str,
     file: UploadFile = File(...),
     current_user: TokenData = Depends(get_current_user),
 ):
@@ -35,11 +36,12 @@ async def upload_document(
 
     chunks = chunk_text(full_text)
     doc_id = str(uuid.uuid4())
-    chunk_count = add_document_chunks(current_user.uid, doc_id, chunks)
+    chunk_count = add_document_chunks(patient_id, doc_id, chunks)
 
     doc_meta = {
         "doc_id": doc_id,
         "user_id": current_user.uid,
+        "patient_id": patient_id,
         "filename": file.filename,
         "page_count": page_count,
         "chunk_count": chunk_count,
@@ -51,8 +53,13 @@ async def upload_document(
 
 
 @router.get("/", response_model=DocumentList)
-async def list_documents(current_user: TokenData = Depends(get_current_user)):
-    docs = list_user_documents(current_user.uid)
+async def list_documents(patient_id: str, current_user: TokenData = Depends(get_current_user)):
+    # Basic check to ensure patient exists before listing
+    patient = get_patient(patient_id)
+    if not patient or patient["user_id"] != current_user.uid:
+        raise HTTPException(status_code=403, detail="Not authorized for this patient")
+
+    docs = list_patient_documents(patient_id)
     return DocumentList(documents=[DocumentOut(**d) for d in docs])
 
 
@@ -66,5 +73,5 @@ async def delete_document_endpoint(
     if doc.get("user_id") != current_user.uid:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    delete_document_chunks(current_user.uid, doc_id)
+    delete_document_chunks(doc.get("patient_id"), doc_id)
     delete_document(doc_id)

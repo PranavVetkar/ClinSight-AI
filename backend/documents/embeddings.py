@@ -27,17 +27,17 @@ def _get_chroma() -> chromadb.PersistentClient:
     return _chroma_client
 
 
-def _collection_name(user_id: str) -> str:
-    return f"user_{user_id.replace('-', '_')}"
+def _collection_name(patient_id: str) -> str:
+    return f"patient_{patient_id.replace('-', '_')}"
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def add_document_chunks(user_id: str, doc_id: str, chunks: List[str]) -> int:
+def add_document_chunks(patient_id: str, doc_id: str, chunks: List[str]) -> int:
     """Embed and store chunks for a document. Returns the number of chunks stored."""
     model = get_model()
     client = _get_chroma()
-    collection = client.get_or_create_collection(name=_collection_name(user_id))
+    collection = client.get_or_create_collection(name=_collection_name(patient_id))
 
     embeddings = model.encode(chunks).tolist()
     ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
@@ -47,26 +47,37 @@ def add_document_chunks(user_id: str, doc_id: str, chunks: List[str]) -> int:
     return len(chunks)
 
 
-def query_chunks(user_id: str, doc_id: str, query: str, top_k: int = 5) -> List[str]:
-    """Return the top-k most relevant chunks for the query from a specific document."""
+def query_patient_knowledge_base(patient_id: str, query: str, top_k: int = 15) -> List[str]:
+    """Return top-k relevant chunks across ALL documents for a specific patient."""
     model = get_model()
     client = _get_chroma()
-    collection = client.get_or_create_collection(name=_collection_name(user_id))
+    collection = client.get_or_create_collection(name=_collection_name(patient_id))
+    
+    # If the collection is basically empty, .query throws an error sometimes, so we catch it
+    if collection.count() == 0:
+        return []
 
     query_embedding = model.encode([query]).tolist()
     results = collection.query(
         query_embeddings=query_embedding,
         n_results=top_k,
-        where={"doc_id": doc_id},
     )
     return results["documents"][0] if results["documents"] else []
 
 
-def delete_document_chunks(user_id: str, doc_id: str) -> None:
+def delete_document_chunks(patient_id: str, doc_id: str) -> None:
     """Remove all chunks for a given document from the vector store."""
     client = _get_chroma()
-    collection = client.get_or_create_collection(name=_collection_name(user_id))
+    collection = client.get_or_create_collection(name=_collection_name(patient_id))
     # Get all IDs for this doc and delete them
     results = collection.get(where={"doc_id": doc_id})
     if results["ids"]:
         collection.delete(ids=results["ids"])
+
+def delete_patient_collection(patient_id: str) -> None:
+    """Delete an entire patient's vector database collection."""
+    client = _get_chroma()
+    try:
+        client.delete_collection(name=_collection_name(patient_id))
+    except ValueError:
+        pass # Collection might not exist yet if no docs were uploaded

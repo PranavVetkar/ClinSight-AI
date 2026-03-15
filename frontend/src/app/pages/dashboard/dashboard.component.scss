@@ -114,7 +114,13 @@
     transition: all 0.2s;
     white-space: nowrap;
 
-    &:hover:not(.uploading) {
+    &.active {
+        background: transparent;
+        border: 1px solid #f87171;
+        color: #f87171;
+    }
+
+    &:hover:not(.uploading):not(.active) {
         transform: translateY(-1px);
         box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
     }
@@ -122,6 +128,77 @@
     &.uploading {
         opacity: 0.7;
         cursor: not-allowed;
+    }
+}
+
+// ── Create Patient Form Sidebar/Inline Panel ──────────────────────────────
+.create-form-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    animation: fadeInUp 0.3s ease-out;
+
+    h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        color: var(--accent-light);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        input, select {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+
+            &:focus {
+                outline: none;
+                border-color: var(--accent-light);
+            }
+        }
+    }
+
+    .create-btn {
+        width: 100%;
+        max-width: 250px;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, #009688, #00bcd4);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
     }
 }
 

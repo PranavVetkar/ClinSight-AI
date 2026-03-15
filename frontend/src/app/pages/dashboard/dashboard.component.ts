@@ -1,32 +1,32 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
-import { DocumentService, Document } from '../../services/document.service';
+import { PatientService, Patient, PatientCreate } from '../../services/patient.service';
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, MatSnackBarModule, MatProgressSpinnerModule],
+    imports: [CommonModule, FormsModule, MatSnackBarModule, MatProgressSpinnerModule],
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
-    documents: Document[] = [];
+    patients: Patient[] = [];
     loading = false;
-    uploading = false;
     userEmail = '';
     deletingId: string | null = null;
-
-    get totalPages(): number {
-        return this.documents.reduce((sum, d) => sum + d.page_count, 0);
-    }
-
+    
+    // New Patient Form State
+    showCreateForm = false;
+    creating = false;
+    newPatient: PatientCreate = { name: '', age: 0, gender: 'Other' };
 
     constructor(
-        private docService: DocumentService,
+        private patientService: PatientService,
         private auth: AuthService,
         private router: Router,
         private snackBar: MatSnackBar
@@ -34,60 +34,61 @@ export class DashboardComponent implements OnInit {
 
     ngOnInit(): void {
         this.userEmail = this.auth.getUserEmail() || '';
-        this.loadDocuments();
+        this.loadPatients();
     }
 
-    loadDocuments(): void {
+    loadPatients(): void {
         this.loading = true;
-        this.docService.listDocuments().subscribe({
-            next: res => { this.documents = res.documents; this.loading = false; },
+        this.patientService.listPatients().subscribe({
+            next: (pts) => { this.patients = pts; this.loading = false; },
             error: () => { this.loading = false; }
         });
     }
 
-    onFileSelected(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        if (!input.files?.length) return;
-        const file = input.files[0];
-        if (!file.name.toLowerCase().endsWith('.pdf')) {
-            this.snackBar.open('Only PDF files are supported', 'Close', { duration: 3000, panelClass: 'snack-error' });
+    toggleCreateForm(): void {
+        this.showCreateForm = !this.showCreateForm;
+        if (!this.showCreateForm) {
+            this.newPatient = { name: '', age: 0, gender: 'Other' };
+        }
+    }
+
+    createPatient(): void {
+        if (!this.newPatient.name || !this.newPatient.age) {
+            this.snackBar.open('Please provide a name and age', 'Close', { duration: 3000, panelClass: 'snack-error' });
             return;
         }
-        this.uploading = true;
-        this.docService.uploadDocument(file).subscribe({
-            next: (doc) => {
-                this.uploading = false;
-                this.documents.unshift(doc);
-                this.snackBar.open(`"${doc.filename}" uploaded successfully!`, 'Close', { duration: 3000, panelClass: 'snack-success' });
-                input.value = '';
+
+        this.creating = true;
+        this.patientService.createPatient(this.newPatient).subscribe({
+            next: (pt) => {
+                this.creating = false;
+                this.patients.unshift(pt);
+                this.toggleCreateForm();
+                this.snackBar.open('Patient record created!', 'Close', { duration: 3000, panelClass: 'snack-success' });
             },
             error: (err) => {
-                this.uploading = false;
-                this.snackBar.open(err.error?.detail || 'Upload failed', 'Close', { duration: 4000, panelClass: 'snack-error' });
+                this.creating = false;
+                this.snackBar.open(err.error?.detail || 'Creation failed', 'Close', { duration: 4000, panelClass: 'snack-error' });
             }
         });
     }
 
-    openDocument(docId: string): void {
-        this.router.navigate(['/document', docId]);
+    openPatient(patientId: string): void {
+        this.router.navigate(['/patient', patientId]);
     }
 
-    deleteDocument(event: Event, docId: string): void {
+    deletePatient(event: Event, patientId: string): void {
         event.stopPropagation();
-        if (!confirm('Delete this document? This cannot be undone.')) return;
-        this.deletingId = docId;
-        this.docService.deleteDocument(docId).subscribe({
+        if (!confirm('Delete this patient and ALL their associated medical records? This cannot be undone.')) return;
+        this.deletingId = patientId;
+        this.patientService.deletePatient(patientId).subscribe({
             next: () => {
-                this.documents = this.documents.filter(d => d.doc_id !== docId);
+                this.patients = this.patients.filter(p => p.patient_id !== patientId);
                 this.deletingId = null;
-                this.snackBar.open('Document deleted', 'Close', { duration: 2000 });
+                this.snackBar.open('Patient fully deleted', 'Close', { duration: 2000 });
             },
             error: () => { this.deletingId = null; }
         });
-    }
-
-    formatSize(bytes?: number): string {
-        return this.docService.formatFileSize(bytes);
     }
 
     formatDate(iso: string): string {

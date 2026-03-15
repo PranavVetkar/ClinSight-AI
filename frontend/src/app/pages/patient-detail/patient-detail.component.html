@@ -1,0 +1,133 @@
+<div class="detail-wrapper">
+    <!-- Header -->
+    <nav class="detail-nav">
+        <button id="back-btn" class="btn-back" (click)="goBack()">← Back</button>
+        <div class="doc-header-info" *ngIf="patient">
+            <span class="doc-header-icon">👤</span>
+            <div>
+                <h2 class="doc-header-title">{{ patient.name }}</h2>
+                <span class="doc-header-meta">
+                    {{ patient.age }} yrs · {{ patient.gender }} 
+                    <ng-container *ngIf="patient.mrn">· MRN: {{ patient.mrn }}</ng-container>
+                </span>
+            </div>
+        </div>
+        <div *ngIf="loadingPatient" class="doc-header-loading">
+            <mat-spinner diameter="24" strokeWidth="2"></mat-spinner>
+        </div>
+    </nav>
+
+    <div class="main-layout">
+        <!-- Sidebar: Attached Documents -->
+        <aside class="records-sidebar">
+            <div class="sidebar-header">
+                <h3>Patient Records</h3>
+                <span class="count-badge">{{ documents.length }}</span>
+            </div>
+            
+            <label class="btn-upload fade-in" [class.uploading]="uploading">
+                <ng-container *ngIf="!uploading">
+                    <span>+ Upload Record</span>
+                </ng-container>
+                <ng-container *ngIf="uploading">
+                    <mat-spinner diameter="16" strokeWidth="2"></mat-spinner>
+                    <span>Uploading...</span>
+                </ng-container>
+                <input type="file" accept=".pdf" (change)="onFileSelected($event)" [disabled]="uploading" hidden />
+            </label>
+
+            <div class="records-list" *ngIf="documents.length > 0">
+                <div class="record-card fade-in" *ngFor="let doc of documents">
+                    <div class="record-info">
+                        <span class="record-icon">📋</span>
+                        <div class="record-meta">
+                            <h4>{{ doc.filename }}</h4>
+                            <span>{{ formatSize(doc.size_bytes) }} · {{ doc.page_count }} pages</span>
+                        </div>
+                    </div>
+                    <button class="btn-delete-record" (click)="deleteDocument(doc.doc_id)"
+                            [disabled]="deletingDocId === doc.doc_id">
+                        <mat-spinner *ngIf="deletingDocId === doc.doc_id" diameter="14" strokeWidth="2"></mat-spinner>
+                        <span *ngIf="deletingDocId !== doc.doc_id">✕</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="empty-records fade-in" *ngIf="documents.length === 0 && !loadingPatient">
+                <p>No records uploaded for this patient yet.</p>
+            </div>
+        </aside>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <!-- Welcome Message -->
+            <div class="welcome-msg" *ngIf="messages.length === 0 && !loadingPatient">
+                <div class="welcome-icon">⚕️</div>
+                <h3>Ask about {{ patient?.name }}'s Medical History</h3>
+                <p>I will search and cross-reference across <strong>ALL {{ documents.length }} attached records</strong> to give you precise, grounded clinical answers.</p>
+                <div class="suggestion-chips" *ngIf="documents.length > 0">
+                    <button class="chip" (click)="question = 'What is the patient\'s primary diagnosis?'; sendQuestion()">What is the primary diagnosis?</button>
+                    <button class="chip" (click)="question = 'Are there any critical lab values or anomalies?'; sendQuestion()">Critical lab values?</button>
+                    <button class="chip" (click)="question = 'Summarize the medical history across all records'; sendQuestion()">Summarize history</button>
+                    <button class="chip" (click)="question = 'What medications is the patient on?'; sendQuestion()">Current medications?</button>
+                </div>
+                <div class="upload-prompt" *ngIf="documents.length === 0">
+                    <p class="warning">⚠️ Please upload a medical record using the sidebar to start asking questions.</p>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages" *ngIf="messages.length > 0">
+                <div class="message" *ngFor="let msg of messages; let i = index" [class.user-message]="msg.type === 'user'"
+                    [class.ai-message]="msg.type === 'ai'">
+                    <div class="message-avatar">
+                        <span *ngIf="msg.type === 'user'">👤</span>
+                        <span *ngIf="msg.type === 'ai'">⚕️</span>
+                    </div>
+                    <div class="message-body">
+                        <p class="message-text">{{ msg.content }}</p>
+                        <div class="message-footer">
+                            <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+                            <button *ngIf="msg.type === 'ai' && msg.sources && msg.sources.length > 0"
+                                class="sources-toggle" (click)="toggleSources(i)">
+                                {{ isSourceExpanded(i) ? 'Hide' : 'View' }} sources ({{ msg.sources!.length }})
+                            </button>
+                        </div>
+                        <div class="sources-panel" *ngIf="msg.type === 'ai' && isSourceExpanded(i) && msg.sources">
+                            <div class="source-item" *ngFor="let src of msg.sources; let si = index">
+                                <span class="source-num">{{ si + 1 }}</span>
+                                <p>{{ src }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI thinking indicator -->
+                <div class="message ai-message" *ngIf="loading">
+                    <div class="message-avatar"><span>⚕️</span></div>
+                    <div class="message-body">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div #chatEnd></div>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+        <div class="input-wrap">
+            <textarea id="question-input" [(ngModel)]="question" (keydown)="onKeydown($event)"
+                placeholder="Ask about vitals, history, or anomalies across all records... (Enter to send)" rows="1"
+                [disabled]="loading || loadingPatient || documents.length === 0"></textarea>
+            <button id="send-btn" class="btn-send" (click)="sendQuestion()"
+                [disabled]="!question.trim() || loading || loadingPatient || documents.length === 0">
+                <span *ngIf="!loading">➤</span>
+                <mat-spinner *ngIf="loading" diameter="18" strokeWidth="2"></mat-spinner>
+            </button>
+        </div>
+        <p class="input-hint">Press Enter to send · Shift+Enter for new line</p>
+    </div>
+</div>
